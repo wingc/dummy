@@ -1,0 +1,113 @@
+#! /usr/bin/env python
+import serial
+import urllib2
+import json
+import ConfigParser
+import argparse
+import logging
+import os
+import time
+import signal
+import sys
+
+def exit_handler(signal, frame):
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, exit_handler)
+signal.signal(signal.SIGTERM, exit_handler)
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(
+        description='Script to fetch jenkins job status and push to serial port'
+    )
+    
+    parser.add_argument(
+        '--host',
+        help='jenkins hostname',
+        type=str,
+        default="localhost"
+    )
+
+    parser.add_argument(
+        '--port',
+        help='jenkins port',
+        type=int,
+        default="8080"
+    )
+
+    parser.add_argument(
+        '--job',
+        help='jenkins job name',
+        type=str,
+        required=True
+    )
+
+    parser.add_argument(
+        '-d', '--device',
+        help='device name',
+        type=str,
+        required=True
+    )
+
+    parser.add_argument(
+        '-v', '--verbose',
+        help='verbose output',
+        action="store_true"
+    )
+
+    parser.add_argument(
+        '--once',
+        help='run once',
+        action="store_true"
+    )
+
+    parser.add_argument(
+        '--delay',
+        help='refresh delay',
+        type=int,
+        default=5
+    )
+
+    args = parser.parse_args()
+
+    logging.basicConfig(
+        format='%(asctime)s %(levelname)s: %(message)s',
+        level = logging.DEBUG if args.verbose else logging.ERROR
+    )
+
+    API_URL = 'http://{host}:{port}/job/{job}/lastBuild/api/json'.format(host = args.host, port = args.port, job = args.job)
+    
+    RESULT = {
+        'SUCCESS': 'S',
+        'FAILURE': 'F'    
+    }
+
+    ser = serial.Serial(
+        port = args.device,
+        baudrate = 9600,
+        parity = serial.PARITY_NONE,
+        stopbits = serial.STOPBITS_ONE,
+        bytesize = serial.EIGHTBITS
+    )
+    time.sleep(1)
+
+
+    state = ''
+    while ( True ):
+
+        request = urllib2.Request( API_URL )
+        response = urllib2.urlopen( request )
+        data = json.loads( response.read() )
+
+        current_state = RESULT[ data['result'] ]
+
+        #if current_state != state :
+        state = current_state
+        logging.debug( 'Sending to {device}: {char}'.format( device = args.device, char = state ) )
+        ser.write( '{char}'.format( char = state ) )
+
+        if ( args.once ):
+            break
+        
+        time.sleep( args.delay )
