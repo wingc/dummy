@@ -2,7 +2,6 @@
 import serial
 import urllib2
 import json
-import ConfigParser
 import argparse
 import logging
 import os
@@ -100,10 +99,7 @@ if __name__ == '__main__':
         response = urllib2.urlopen( request )
         data = json.loads( response.read() )
 
-        current_state = RESULT[ data['result'] ]
-
-        #if current_state != state :
-        state = current_state
+        state = RESULT[ data['result'] ]
         logging.debug( 'Sending to {device}: {char}'.format( device = args.device, char = state ) )
         ser.write( '{char}'.format( char = state ) )
 
