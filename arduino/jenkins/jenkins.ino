@@ -4,9 +4,19 @@
 #define LED_WHITE 9
 #define DELAY 1000.0
 
+#define CYCLE_TIME 2000UL
+#define BLINK_TIME 500UL
+
 char state;
 char current_state;
 double shift;
+
+void setup( void );
+void loop( void );
+void blinky( int pin, unsigned long ts );
+void switch_on( int pin, double theta );
+void switch_off( void );
+
 
 void setup() {
   Serial.begin(9600);
@@ -45,6 +55,18 @@ void loop() {
     switch_on( LED_RED, theta );
   } else if ( state == 'S' ) {
     analogWrite( LED_GREEN, 255 );
+  } else if ( state == 'B' ) {
+    blinky( LED_RED, millis() );
+  }
+}
+
+void blinky( int pin, unsigned long ts ) {
+  unsigned long offset = ts % CYCLE_TIME;
+
+  if (offset > BLINK_TIME) {
+    analogWrite( pin, 0 );
+  } else {
+    analogWrite( pin, 255 );
   }
 }
 
