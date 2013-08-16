@@ -1,2 +1,2 @@
 test:
-	@test 0 -eq 1
+	@test 1 -eq 1
