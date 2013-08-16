@@ -91,16 +91,21 @@ if __name__ == '__main__':
     )
     time.sleep(1)
 
-    state = ''
+    state = False
     while ( True ):
 
-        request = urllib2.Request( API_URL )
-        response = urllib2.urlopen( request )
-        data = json.loads( response.read() )
+        try:
+            request = urllib2.Request( API_URL )
+            response = urllib2.urlopen( request )
+            data = json.loads( response.read() )
 
-        state = RESULT[ data['result'] ]
-        logging.debug( 'Sending to {device}: {char}'.format( device = args.device, char = state ) )
-        ser.write( '{char}'.format( char = state ) )
+            state = RESULT[ data['result'] ]
+        except:
+            state = False
+
+        if state:
+            logging.debug( 'Sending to {device}: {char}'.format( device = args.device, char = state ) )
+            ser.write( '{char}'.format( char = state ) )
 
         if ( args.once ):
             break
